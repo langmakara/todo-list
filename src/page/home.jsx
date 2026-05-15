@@ -1,15 +1,14 @@
 import { Box } from "@chakra-ui/react";
-import Placement from "../components/Placement";
 import TodoDashboard from "../components/TodoDashboard";
 
-
 const Home = () => {
-    return (
-        <Box p={8}>
-            <Placement />
-            <TodoDashboard />
-        </Box>
-    );
+  return (
+    <>
+      <Box p={8}>
+        <TodoDashboard />
+      </Box>
+    </>
+  );
 };
 
 export default Home;

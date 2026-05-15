@@ -1,15 +1,18 @@
-import { HamburgerIcon } from "@chakra-ui/icons";
-import { Box, Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerOverlay, IconButton, useDisclosure } from "@chakra-ui/react";
+import { Box, Button, Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerOverlay, useDisclosure } from "@chakra-ui/react";
 import React from "react";
+import { IoLibrary } from "react-icons/io5";
 
 const Placement = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const btnRef = React.useRef();
+  const [placement] = React.useState('left')
 
   return (
     <Box>
-      <IconButton variant="outline" colorScheme="teal" aria-label="Send email" ref={btnRef} onClick={onOpen} icon={<HamburgerIcon />} />
-      <Drawer isOpen={isOpen} placement="left" onClose={onClose} finalFocusRef={btnRef}>
+      <Button variant="solid" colorScheme="white" aria-label="Send email" ref={btnRef} onClick={onOpen}>
+        <IoLibrary size={20} color="white" />
+      </Button>
+      <Drawer placement={placement} onClose={onClose} isOpen={isOpen}>
         <DrawerOverlay />
         <DrawerContent>
           <DrawerHeader borderBottomWidth="1px">Basic Drawer</DrawerHeader>

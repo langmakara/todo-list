@@ -9,4 +9,24 @@ export const getAllTodo = async () => {
         console.error("Error getting all todos:", error);
         throw error;
     }
-}   
+}
+
+export const updateTodo = async ({ id, data }) => {
+    try {
+        const response = await axios.put(`https://dummyjson.com/todos/${id}`, data);
+        return response.data;
+    } catch (error) {
+        console.error("Error updating todo:", error);
+        throw error;
+    }
+}
+
+export const addTodo = async (data) => {
+    try {
+        const response = await axios.post(`https://dummyjson.com/todos/add`, data);
+        return response.data;
+    } catch (error) {
+        console.error("Error adding todo:", error);
+        throw error;
+    }
+}

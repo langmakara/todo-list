@@ -4,14 +4,14 @@ import { useGetTodo } from "../hooks/todo";
 import TodoList from "./todoList";
 
 const TodoDashboard = () => {
-  const { data: getTodo, isLoading: isLoadingGetTodo } = useGetTodo({
+  const getTodo = useGetTodo({
     config: {
       enabled: true,
       retry: false,
     },
   });
 
-  if (isLoadingGetTodo) {
+  if (getTodo.isLoading) {
     return (
       <Flex justify="center" align="center" height="100vh">
         <Spinner size="xl" />
@@ -19,8 +19,8 @@ const TodoDashboard = () => {
     );
   }
 
-  const allTodo = getTodo?.todos || [];
-  console.log("allTodo", allTodo);
+  const allTodo = getTodo?.data?.todos || [];
+
 
   const completedTodo = allTodo.filter((todo) => todo.completed);
   const inProgressTodo = allTodo.filter((todo) => !todo.completed);
@@ -120,7 +120,7 @@ const TodoDashboard = () => {
           </Card>
         </Box>
       </SimpleGrid>
-      <TodoList />
+      <TodoList data={getTodo} />
     </>
   );
 };
