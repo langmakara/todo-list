@@ -1,13 +1,16 @@
 import { Box } from "@chakra-ui/react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import Home from "../page/home";
 import Login from "../page/login";
 import Navbar from "../components/Navbar";
 
-export default function index() {
+const Index = () => {
+  const location = useLocation();
+  const hideNavbar = location.pathname === "/";
+
   return (
     <>
-      <Navbar />
+      {!hideNavbar && <Navbar />}
       <Box bg="#e9eaf7ff">
         <Box w={1200} mx="auto">
           <Routes>
@@ -19,3 +22,5 @@ export default function index() {
     </>
   );
 }
+
+export default Index;

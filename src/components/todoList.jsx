@@ -2,8 +2,8 @@ import { PlusSquareIcon } from "@chakra-ui/icons";
 import { Box, Button, Card, CardBody, CardHeader, Checkbox, Flex, FormControl, FormLabel, Grid, GridItem, Heading, IconButton, Input, InputGroup, InputLeftElement, Select, SimpleGrid, Text, useToast, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { IoPencilSharp, IoSearchCircleOutline, IoTrashBinSharp } from "react-icons/io5";
-import { useAddTodo, useUpdateTodo } from "../hooks/todo";
+import { IoCheckmarkDoneSharp, IoPencilSharp, IoSearchCircleOutline, IoTrashBinSharp } from "react-icons/io5";
+import { useAddTodo, useDeleteTodo, useUpdateTodo } from "../hooks/todo";
 
 const TodoList = (props) => {
   const { data, isLoading, isError } = props;
@@ -13,6 +13,9 @@ const TodoList = (props) => {
   const inProgressTodo = allTodo.filter((todo) => !todo.completed);
   const toast = useToast();
   const { register, handleSubmit } = useForm();
+  const [selectId, setSelectId] = useState(null);
+  const [editId, setEditId] = useState(null);
+  const [editValue, setEditValue] = useState("");
 
   const status = [
     { label: "All", value: "all" },
@@ -27,10 +30,13 @@ const TodoList = (props) => {
     { label: "Other", value: "other" },
   ];
   const [selectStatus, setSelectStatus] = useState(status[0]);
+  const [filterSelectedCategory, setFilterSelectedCategory] = useState(filterCategory[0]);
   const { mutateAsync: updateTodo, isLoading: updateTodoLoading } = useUpdateTodo({
     config: {
       onSuccess: () => {
+        if (toast.isActive('update-todo')) return;
         toast({
+          id: 'update-todo',
           title: "Todo updated successfully",
           status: "success",
           duration: 5000,
@@ -38,7 +44,9 @@ const TodoList = (props) => {
         });
       },
       onError: (error) => {
+        if (toast.isActive('update-todo-error')) return;
         toast({
+          id: 'update-todo-error',
           title: "Error updating todo",
           description: error.message,
           status: "error",
@@ -62,6 +70,28 @@ const TodoList = (props) => {
       onError: (error) => {
         toast({
           title: "Error adding todo",
+          description: error.message,
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      },
+    },
+  });
+
+  const { mutateAsync: deleteTodo, isLoading: deleteTodoLoading } = useDeleteTodo({
+    config: {
+      onSuccess: () => {
+        toast({
+          title: "Todo deleted successfully",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Error deleting todo",
           description: error.message,
           status: "error",
           duration: 5000,
@@ -225,15 +255,15 @@ const TodoList = (props) => {
                     return (
                       <Button
                         key={item.value}
-                        size='xs'
+                        size="xs"
                         fontSize="xs"
                         mr={3}
                         p={1}
-                        colorScheme={item.value === selectStatus.value ? "blue" : "gray.100"}
+                        colorScheme={item.value === filterSelectedCategory.value ? "blue" : "gray.100"}
                         fontWeight="bold"
-                        color={item.value === selectStatus.value ? "white" : "black"}
+                        color={item.value === filterSelectedCategory.value ? "white" : "black"}
                         onClick={() => {
-                          setSelectStatus(item);
+                          setFilterSelectedCategory(item);
                           if (item.value === "personal") {
                             setFilterTodo(allTodo);
                           } else if (item.value === "work") {
@@ -253,24 +283,70 @@ const TodoList = (props) => {
                     Todo
                   </Text>
                   {filterTodo.map((todo) => (
-                    <Card key={todo.id} my={2} p={1}>
+                    <Card key={todo.id} my={2} p={1} shadow="2xl">
                       <CardBody>
                         <Grid templateColumns="repeat(4, 1fr)" gap={4}>
                           <GridItem colSpan={3}>
-                            <Checkbox
-                              isChecked={todo.completed}
-                              isLoading={updateTodoLoading}
-                              onChange={() => {
-                                handleUpdateTodo(todo.id, { completed: !todo.completed ? true : false });
-                              }}
-                            >
-                              <Text textDecoration={todo.completed ? "line-through" : "none"}>{todo.todo}</Text>
-                            </Checkbox>
+                            {editId === todo.id ? (
+                              <Input
+                                value={editValue}
+                                size="sm"
+                                rounded={8}
+                                autoFocus
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    handleUpdateTodo(todo.id, { todo: editValue });
+                                    setEditId(null);
+                                  }
+                                  if (e.key === "Escape") {
+                                    setEditId(null);
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <Checkbox isChecked={todo.completed} onChange={() => handleUpdateTodo(todo.id, { completed: !todo.completed })}>
+                                <Text textDecoration={todo.completed ? "line-through" : "none"}>{todo.todo}</Text>
+                              </Checkbox>
+                            )}
                           </GridItem>
+
                           <GridItem colSpan={1}>
                             <Flex justify="flex-end">
-                              <IconButton aria-label="Call Segun" size="xs" mr={2} icon={<IoPencilSharp />} />
-                              <IconButton aria-label="Call Segun" size="xs" icon={<IoTrashBinSharp />} />
+                              {editId === todo.id ? (
+                                <IconButton
+                                  aria-label="Save"
+                                  size="xs"
+                                  mr={2}
+                                  colorScheme="green"
+                                  icon={<IoCheckmarkDoneSharp />}
+                                  onClick={() => {
+                                    handleUpdateTodo(todo.id, { todo: editValue });
+                                    setEditId(null);
+                                  }}
+                                />
+                              ) : (
+                                <IconButton
+                                  aria-label="Edit"
+                                  size="xs"
+                                  mr={2}
+                                  icon={<IoPencilSharp />}
+                                  onClick={() => {
+                                    setEditId(todo.id);
+                                    setEditValue(todo.todo);
+                                  }}
+                                />
+                              )}
+                              <IconButton
+                                aria-label="Delete"
+                                size="xs"
+                                onClick={() => {
+                                  setSelectId({ id: todo.id });
+                                  deleteTodo(todo.id);
+                                }}
+                                isDisabled={todo.id === selectId?.id && deleteTodoLoading}
+                                icon={<IoTrashBinSharp />}
+                              />
                             </Flex>
                           </GridItem>
                         </Grid>

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { addTodo, getAllTodo, updateTodo } from "../api/todo";
+import { addTodo, deleteTodo, getAllTodo, updateTodo } from "../api/todo";
 
 
 
@@ -30,6 +30,13 @@ export const useUpdateTodo = ({ config }) => {
 export const useAddTodo = ({ config }) => {
     return useMutation({
         mutationFn: (data) => addTodo(data),
+        ...config,
+    });
+}
+
+export const useDeleteTodo = ({ config }) => {
+    return useMutation({
+        mutationFn: (id) => deleteTodo(id),
         ...config,
     });
 }

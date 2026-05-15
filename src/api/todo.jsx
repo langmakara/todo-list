@@ -30,3 +30,13 @@ export const addTodo = async (data) => {
         throw error;
     }
 }
+
+export const deleteTodo = async (id) => {
+    try {
+        const response = await axios.delete(`https://dummyjson.com/todos/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting todo:", error);
+        throw error;
+    }
+}

@@ -10,7 +10,7 @@ const Placement = () => {
   return (
     <Box>
       <Button variant="solid" colorScheme="white" aria-label="Send email" ref={btnRef} onClick={onOpen}>
-        <IoLibrary size={20} color="white" />
+        <IoLibrary size={20} color="black" />
       </Button>
       <Drawer placement={placement} onClose={onClose} isOpen={isOpen}>
         <DrawerOverlay />
