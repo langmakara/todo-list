@@ -158,7 +158,7 @@ const TodoList = (props) => {
                             <option value="Personal">Personal</option>
                             <option value="Home">Home</option>
                             <option value="Work">Work</option>
-                            <option value="Other">Other</option>
+                            <option value="Other">Fa</option>
                           </Select>
                         </FormControl>
                       </Box>

@@ -2,7 +2,6 @@ import { Box, Button, Flex, Heading, Image, SimpleGrid, Text, useToast } from "@
 import { IoLogOutOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import profile from "../assets/profile.jpg";
-import Placement from "./Placement";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -15,7 +14,6 @@ const Navbar = () => {
   return (
     <Box p={4} px={20} display="flex" justifyContent="space-between" alignItems="center" bg="#a3b0e7ff">
       <Box display="flex" alignItems="center">
-        <Placement />
         <Heading fontSize="xl" fontWeight="bold" display="flex" alignItems="center">
           Todo List
         </Heading>

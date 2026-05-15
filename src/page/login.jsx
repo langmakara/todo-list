@@ -64,7 +64,7 @@ const Login = () => {
                     </Flex>
                   </Box>
                 </SimpleGrid>
-                <Input type="password" placeholder="......." size="md" width="400px" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <Input type="password" placeholder="••••••••" size="md" width="400px" value={password} onChange={(e) => setPassword(e.target.value)} />
                 <SimpleGrid columns={1} w={400}>
                   <Flex justify="flex-start">
                     <Checkbox>Remember my state for 30 days</Checkbox>
