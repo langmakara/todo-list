@@ -1,4 +1,4 @@
-import { PlusSquareIcon } from "@chakra-ui/icons";
+import { AddIcon } from "@chakra-ui/icons";
 import { Box, Button, Card, CardBody, CardHeader, Checkbox, Flex, FormControl, FormLabel, Grid, GridItem, Heading, IconButton, Input, InputGroup, InputLeftElement, Select, SimpleGrid, Text, useToast, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -12,7 +12,7 @@ const TodoList = (props) => {
   const completedTodo = allTodo.filter((todo) => todo.completed);
   const inProgressTodo = allTodo.filter((todo) => !todo.completed);
   const toast = useToast();
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, reset } = useForm();
   const [selectId, setSelectId] = useState(null);
   const [editId, setEditId] = useState(null);
   const [editValue, setEditValue] = useState("");
@@ -24,6 +24,7 @@ const TodoList = (props) => {
   ];
 
   const filterCategory = [
+    { label: "All", value: "all" },
     { label: "Personal", value: "personal" },
     { label: "Home", value: "home" },
     { label: "Work", value: "work" },
@@ -31,6 +32,7 @@ const TodoList = (props) => {
   ];
   const [selectStatus, setSelectStatus] = useState(status[0]);
   const [filterSelectedCategory, setFilterSelectedCategory] = useState(filterCategory[0]);
+
   const { mutateAsync: updateTodo, isLoading: updateTodoLoading } = useUpdateTodo({
     config: {
       onSuccess: () => {
@@ -39,8 +41,9 @@ const TodoList = (props) => {
           id: 'update-todo',
           title: "Todo updated successfully",
           status: "success",
-          duration: 5000,
+          duration: 3000,
           isClosable: true,
+          position: "top-right",
         });
       },
       onError: (error) => {
@@ -52,6 +55,7 @@ const TodoList = (props) => {
           status: "error",
           duration: 5000,
           isClosable: true,
+          position: "top-right",
         });
       },
     },
@@ -61,11 +65,13 @@ const TodoList = (props) => {
     config: {
       onSuccess: () => {
         toast({
-          title: "Todo added successfully",
+          title: "Task added!",
           status: "success",
-          duration: 5000,
+          duration: 3000,
           isClosable: true,
+          position: "top-right",
         });
+        reset();
       },
       onError: (error) => {
         toast({
@@ -74,6 +80,7 @@ const TodoList = (props) => {
           status: "error",
           duration: 5000,
           isClosable: true,
+          position: "top-right",
         });
       },
     },
@@ -83,10 +90,11 @@ const TodoList = (props) => {
     config: {
       onSuccess: () => {
         toast({
-          title: "Todo deleted successfully",
-          status: "success",
-          duration: 5000,
+          title: "Task deleted",
+          status: "info",
+          duration: 3000,
           isClosable: true,
+          position: "top-right",
         });
       },
       onError: (error) => {
@@ -96,6 +104,7 @@ const TodoList = (props) => {
           status: "error",
           duration: 5000,
           isClosable: true,
+          position: "top-right",
         });
       },
     },
@@ -105,11 +114,10 @@ const TodoList = (props) => {
     await updateTodo({ id, data });
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (formData) => {
     try {
-      const json = { todo: data.todo, completed: false, userId: 1 };
+      const json = { todo: formData.todo, completed: false, userId: 1 };
       await addTodo(json);
-      console.log(json);
     } catch (e) {
       toast({
         title: "Error adding todo",
@@ -117,182 +125,254 @@ const TodoList = (props) => {
         status: "error",
         duration: 5000,
         isClosable: true,
+        position: "top-right",
       });
     }
   };
 
   if (isLoading) {
-    return <Box>Loading...</Box>;
+    return (
+      <Flex justify="center" align="center" py={20}>
+        <Text color="gray.500">Loading...</Text>
+      </Flex>
+    );
   }
 
   if (isError) {
-    return <Box>Error...</Box>;
+    return (
+      <Flex justify="center" align="center" py={20}>
+        <Text color="red.500">Error loading tasks</Text>
+      </Flex>
+    );
   }
 
   return (
-    <Box mt={5}>
-      <Grid templateColumns="repeat(3, 1fr)" gap={4}>
-        {/* Left: 1 column */}
-        <GridItem colSpan={1}>
-          <Box>
-            <Card maxW="md" rounded={20} shadow="2xl" h="50vh" onSubmit={handleSubmit(onSubmit)}>
-              <CardHeader p={2} mt={2} mx={2}>
-                <Heading fontSize="md" fontWeight="bold">
-                  <PlusSquareIcon color="purple" /> Quick Add Task
-                </Heading>
-              </CardHeader>
-              <CardBody p={2} px={5} my={2}>
-                <VStack>
-                  <Box w="100%">
+    <Box mt={6}>
+      <Grid templateColumns={{ base: "1fr", lg: "300px 1fr" }} gap={6}>
+        <GridItem>
+          <Card rounded={24} shadow="0 4px 20px rgba(0,0,0,0.08)" border="1px solid" borderColor="gray.100">
+            <CardHeader p={5} pb={2}>
+              <Heading fontSize="lg" fontWeight="bold" color="gray.700" display="flex" alignItems="center" gap={2}>
+                <AddIcon color="purple.500" boxSize={3} />
+                Quick Add Task
+              </Heading>
+            </CardHeader>
+            <CardBody p={5} pt={2}>
+              <VStack spacing={4}>
+                <FormControl>
+                  <FormLabel fontSize="sm" color="gray.600">Task Description</FormLabel>
+                  <Input
+                    {...register("todo")}
+                    type="text"
+                    placeholder="What needs to be done?"
+                    rounded={16}
+                    bg="gray.50"
+                    border="2px solid"
+                    borderColor="gray.100"
+                    _focus={{ borderColor: "purple.400", bg: "white" }}
+                    _placeholder={{ color: "gray.400" }}
+                  />
+                </FormControl>
+
+                <SimpleGrid columns={2} spacing={3} w="100%">
+                  <Box>
                     <FormControl>
-                      <FormLabel fontSize="sm">Task Description</FormLabel>
-                      <Input {...register("todo")} type="text" placeholder="Task Description" rounded={15} />
+                      <FormLabel fontSize="sm" color="gray.600">Category</FormLabel>
+                      <Select
+                        rounded={16}
+                        bg="gray.50"
+                        border="2px solid"
+                        borderColor="gray.100"
+                        _focus={{ borderColor: "purple.400", bg: "white" }}
+                        {...register("category")}
+                      >
+                        <option value="personal">Personal</option>
+                        <option value="home">Home</option>
+                        <option value="work">Work</option>
+                        <option value="other">Other</option>
+                      </Select>
                     </FormControl>
                   </Box>
-                  <Box w="100%" mt={4}>
-                    <SimpleGrid columns={2} spacing={4}>
-                      <Box w="100%">
-                        <FormControl>
-                          <FormLabel fontSize="sm">Category</FormLabel>
-                          <Select>
-                            <option value="Personal">Personal</option>
-                            <option value="Home">Home</option>
-                            <option value="Work">Work</option>
-                            <option value="Other">Fa</option>
-                          </Select>
-                        </FormControl>
-                      </Box>
-                      <Box w="100%">
-                        <FormControl>
-                          <FormLabel fontSize="sm">Priority</FormLabel>
-                          <Select>
-                            <option value="Low">🟢 Low</option>
-                            <option value="Medium">🟡 Medium</option>
-                            <option value="High">🔴 High</option>
-                          </Select>
-                        </FormControl>
-                      </Box>
-                    </SimpleGrid>
-                  </Box>
-                  <Box w="100%" h="50px">
+                  <Box>
                     <FormControl>
-                      <FormLabel fontSize="sm">Due Date (Optional)</FormLabel>
-                      <Input type="text" placeholder="Due Date" />
+                      <FormLabel fontSize="sm" color="gray.600">Priority</FormLabel>
+                      <Select
+                        rounded={16}
+                        bg="gray.50"
+                        border="2px solid"
+                        borderColor="gray.100"
+                        _focus={{ borderColor: "purple.400", bg: "white" }}
+                        {...register("priority")}
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                      </Select>
                     </FormControl>
                   </Box>
-                  <Box w="100%" mt={8}>
-                    <Button w="100%" colorScheme="brand" mt={2} rounded={15} isLoading={addTodoLoading} onClick={handleSubmit(onSubmit)}>
-                      Add Todo
-                    </Button>
-                  </Box>
-                </VStack>
-              </CardBody>
-            </Card>
-          </Box>
+                </SimpleGrid>
+
+                <FormControl>
+                  <FormLabel fontSize="sm" color="gray.600">Due Date (Optional)</FormLabel>
+                  <Input
+                    type="date"
+                    rounded={16}
+                    bg="gray.50"
+                    border="2px solid"
+                    borderColor="gray.100"
+                    _focus={{ borderColor: "purple.400", bg: "white" }}
+                    {...register("dueDate")}
+                  />
+                </FormControl>
+
+                <Button
+                  w="100%"
+                  colorScheme="purple"
+                  size="lg"
+                  rounded={16}
+                  isLoading={addTodoLoading}
+                  onClick={handleSubmit(onSubmit)}
+                  mt={2}
+                  _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
+                  transition="all 0.2s"
+                >
+                  Add Task
+                </Button>
+              </VStack>
+            </CardBody>
+          </Card>
         </GridItem>
 
-        {/* Right: 2 columns */}
-        <GridItem colSpan={2}>
-          <Box>
-            <Card rounded={20}>
-              <CardHeader>
-                <Box p={4}>
-                  <Grid templateColumns="repeat(3, 1fr)" gap={4}>
-                    <GridItem colSpan={2}>
-                      <InputGroup>
-                        <InputLeftElement pointerEvents="none">
-                          <IoSearchCircleOutline size="20px" color="gray.300" />
-                        </InputLeftElement>
-                        <Input
-                          //   isInvalid={searchLoading}
-                          outline="2px solid blue"
-                          placeholder="Search todo"
-                          //   onChange={(e) => {
-                          //     const value = e.target.value;
-                          //     if (!value) {
-                          //       setSearchData(null);
-                          //       return;
-                          //     }
-                          //     searchEmployee(value);
-                          //   }}
-                        />
-                      </InputGroup>
-                    </GridItem>
-                    <GridItem colSpan={1}>
-                      <Box w="100%" display="flex" justifyContent="space-between" bg="gray.100" rounded={10}>
-                        {status.map((item) => {
-                          return (
-                            <Button
-                              key={item.value}
-                              fontSize="xs"
-                              p={1}
-                              colorScheme={item.value === selectStatus.value ? "brand" : "gray.100"}
-                              fontWeight="bold"
-                              color={item.value === selectStatus.value ? "white" : "black"}
-                              onClick={() => {
-                                setSelectStatus(item);
-                                if (item.value === "all") {
-                                  setFilterTodo(allTodo);
-                                } else if (item.value === "active") {
-                                  setFilterTodo(inProgressTodo);
-                                } else {
-                                  setFilterTodo(completedTodo);
-                                }
-                              }}
-                            >
-                              {item.label}
-                            </Button>
-                          );
-                        })}
-                      </Box>
-                    </GridItem>
-                  </Grid>
-                </Box>
-              </CardHeader>
-              <CardBody>
-                <Box w="100%" justifyContent="space-between" rounded={10}>
-                  {filterCategory.map((item) => {
-                    return (
-                      <Button
-                        key={item.value}
-                        size="xs"
-                        fontSize="xs"
-                        mr={3}
-                        p={1}
-                        colorScheme={item.value === filterSelectedCategory.value ? "blue" : "gray.100"}
-                        fontWeight="bold"
-                        color={item.value === filterSelectedCategory.value ? "white" : "black"}
-                        onClick={() => {
-                          setFilterSelectedCategory(item);
-                          if (item.value === "personal") {
+        <GridItem>
+          <Card rounded={24} shadow="0 4px 20px rgba(0,0,0,0.08)" border="1px solid" borderColor="gray.100">
+            <CardHeader p={5} pb={3}>
+              <Box p={4} bg="gray.50" rounded={20}>
+                <Grid templateColumns={{ base: "1fr", md: "1fr auto" }} gap={4}>
+                  <GridItem>
+                    <InputGroup size="lg">
+                      <InputLeftElement pointerEvents="none">
+                        <IoSearchCircleOutline size="22px" color="gray.400" />
+                      </InputLeftElement>
+                      <Input
+                        placeholder="Search tasks..."
+                        rounded={16}
+                        bg="white"
+                        border="2px solid"
+                        borderColor="gray.200"
+                        _focus={{ borderColor: "purple.400", boxShadow: "none" }}
+                        _placeholder={{ color: "gray.400" }}
+                        onChange={(e) => {
+                          const value = e.target.value.toLowerCase();
+                          if (!value) {
                             setFilterTodo(allTodo);
-                          } else if (item.value === "work") {
-                            setFilterTodo(inProgressTodo);
-                          } else {
-                            setFilterTodo(completedTodo);
+                            return;
                           }
+                          setFilterTodo(allTodo.filter(t => t.todo.toLowerCase().includes(value)));
                         }}
+                      />
+                    </InputGroup>
+                  </GridItem>
+                  <GridItem>
+                    <Flex gap={2} bg="white" p={1} rounded={16} border="2px solid" borderColor="gray.200">
+                      {status.map((item) => (
+                        <Button
+                          key={item.value}
+                          size="sm"
+                          fontSize="sm"
+                          fontWeight="medium"
+                          px={4}
+                          colorScheme={item.value === selectStatus.value ? "purple" : "gray"}
+                          variant={item.value === selectStatus.value ? "solid" : "ghost"}
+                          borderRadius={14}
+                          onClick={() => {
+                            setSelectStatus(item);
+                            if (item.value === "all") {
+                              setFilterTodo(allTodo);
+                            } else if (item.value === "active") {
+                              setFilterTodo(inProgressTodo);
+                            } else {
+                              setFilterTodo(completedTodo);
+                            }
+                          }}
+                        >
+                          {item.label}
+                        </Button>
+                      ))}
+                    </Flex>
+                  </GridItem>
+                </Grid>
+
+                <Flex mt={4} gap={2} flexWrap="wrap">
+                  {filterCategory.map((item) => (
+                    <Button
+                      key={item.value}
+                      size="sm"
+                      fontSize="xs"
+                      fontWeight="medium"
+                      px={3}
+                      py={1}
+                      colorScheme={item.value === filterSelectedCategory.value ? "purple" : "gray"}
+                      variant={item.value === filterSelectedCategory.value ? "solid" : "outline"}
+                      borderRadius="full"
+                      borderColor="gray.300"
+                      onClick={() => {
+                        setFilterSelectedCategory(item);
+                        if (item.value === "all") {
+                          setFilterTodo(allTodo);
+                        } else if (item.value === "personal" || item.value === "home" || item.value === "work" || item.value === "other") {
+                          setFilterTodo(allTodo.filter(t => t.category === item.value));
+                        }
+                      }}
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+                </Flex>
+              </Box>
+            </CardHeader>
+
+            <CardBody p={5} pt={2}>
+              <Box>
+                <Text fontWeight="bold" color="gray.600" mb={4} fontSize="sm">
+                  {filterTodo.length} {filterTodo.length === 1 ? "task" : "tasks"}
+                </Text>
+
+                {filterTodo.length === 0 ? (
+                  <Box textAlign="center" py={10}>
+                    <Text color="gray.400" fontSize="lg">No tasks found</Text>
+                    <Text color="gray.400" fontSize="sm">Add a new task to get started</Text>
+                  </Box>
+                ) : (
+                  <VStack spacing={3} align="stretch">
+                    {filterTodo.map((todo) => (
+                      <Card
+                        key={todo.id}
+                        py={3}
+                        px={4}
+                        rounded={18}
+                        shadow="0 2px 8px rgba(0,0,0,0.06)"
+                        border="1px solid"
+                        borderColor={todo.completed ? "green.100" : "gray.100"}
+                        bg={todo.completed ? "green.50" : "white"}
+                        transition="all 0.2s"
+                        _hover={{ shadow: "0 4px 12px rgba(0,0,0,0.1)", transform: "translateX(4px)" }}
                       >
-                        {item.label}
-                      </Button>
-                    );
-                  })}
-                </Box>
-                <Box mt={4}>
-                  <Text fontWeight="bold" mb={2}>
-                    Todo
-                  </Text>
-                  {filterTodo.map((todo) => (
-                    <Card key={todo.id} my={2} p={1} shadow="2xl">
-                      <CardBody>
-                        <Grid templateColumns="repeat(4, 1fr)" gap={4}>
-                          <GridItem colSpan={3}>
+                        <Flex align="center" justify="space-between">
+                          <Flex align="center" flex={1}>
+                            <Checkbox
+                              isChecked={todo.completed}
+                              onChange={() => handleUpdateTodo(todo.id, { completed: !todo.completed })}
+                              colorScheme="green"
+                              size="lg"
+                              mr={3}
+                            />
                             {editId === todo.id ? (
                               <Input
                                 value={editValue}
                                 size="sm"
-                                rounded={8}
+                                rounded={12}
                                 autoFocus
+                                mr={2}
                                 onChange={(e) => setEditValue(e.target.value)}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") {
@@ -305,58 +385,68 @@ const TodoList = (props) => {
                                 }}
                               />
                             ) : (
-                              <Checkbox isChecked={todo.completed} onChange={() => handleUpdateTodo(todo.id, { completed: !todo.completed })}>
-                                <Text textDecoration={todo.completed ? "line-through" : "none"}>{todo.todo}</Text>
-                              </Checkbox>
+                              <Text
+                                textDecoration={todo.completed ? "line-through" : "none"}
+                                color={todo.completed ? "gray.400" : "gray.700"}
+                                fontWeight={todo.completed ? "normal" : "medium"}
+                                fontSize="md"
+                              >
+                                {todo.todo}
+                              </Text>
                             )}
-                          </GridItem>
+                          </Flex>
 
-                          <GridItem colSpan={1}>
-                            <Flex justify="flex-end">
-                              {editId === todo.id ? (
-                                <IconButton
-                                  aria-label="Save"
-                                  size="xs"
-                                  mr={2}
-                                  colorScheme="green"
-                                  icon={<IoCheckmarkDoneSharp />}
-                                  onClick={() => {
-                                    handleUpdateTodo(todo.id, { todo: editValue });
-                                    setEditId(null);
-                                  }}
-                                />
-                              ) : (
-                                <IconButton
-                                  aria-label="Edit"
-                                  size="xs"
-                                  mr={2}
-                                  icon={<IoPencilSharp />}
-                                  onClick={() => {
-                                    setEditId(todo.id);
-                                    setEditValue(todo.todo);
-                                  }}
-                                />
-                              )}
+                          <Flex align="center" gap={1}>
+                            {editId === todo.id ? (
                               <IconButton
-                                aria-label="Delete"
-                                size="xs"
+                                aria-label="Save"
+                                size="sm"
+                                colorScheme="green"
+                                icon={<IoCheckmarkDoneSharp />}
                                 onClick={() => {
-                                  setSelectId({ id: todo.id });
-                                  deleteTodo(todo.id);
+                                  handleUpdateTodo(todo.id, { todo: editValue });
+                                  setEditId(null);
                                 }}
-                                isDisabled={todo.id === selectId?.id && deleteTodoLoading}
-                                icon={<IoTrashBinSharp />}
+                                rounded={12}
                               />
-                            </Flex>
-                          </GridItem>
-                        </Grid>
-                      </CardBody>
-                    </Card>
-                  ))}
-                </Box>
-              </CardBody>
-            </Card>
-          </Box>
+                            ) : (
+                              <IconButton
+                                aria-label="Edit"
+                                size="sm"
+                                variant="ghost"
+                                icon={<IoPencilSharp />}
+                                onClick={() => {
+                                  setEditId(todo.id);
+                                  setEditValue(todo.todo);
+                                }}
+                                rounded={12}
+                                color="gray.500"
+                                _hover={{ color: "purple.500", bg: "purple.50" }}
+                              />
+                            )}
+                            <IconButton
+                              aria-label="Delete"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectId({ id: todo.id });
+                                deleteTodo(todo.id);
+                              }}
+                              isDisabled={todo.id === selectId?.id && deleteTodoLoading}
+                              icon={<IoTrashBinSharp />}
+                              rounded={12}
+                              color="gray.500"
+                              _hover={{ color: "red.500", bg: "red.50" }}
+                            />
+                          </Flex>
+                        </Flex>
+                      </Card>
+                    ))}
+                  </VStack>
+                )}
+              </Box>
+            </CardBody>
+          </Card>
         </GridItem>
       </Grid>
     </Box>

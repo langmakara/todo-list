@@ -17,10 +17,10 @@ const Index = () => {
     <>
       {isHome && <Sidebar />}
       <Box
-        bg="#e9eaf7ff"
+        bg="linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)"
         ml={`${sidebarWidth}px`}
         minH="100vh"
-        transition="margin-left 0.2s ease"
+        transition="margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
       >
         <Box w={isHome ? "auto" : 1200} mx={isHome ? 0 : "auto"} p={isHome ? 8 : 0}>
           <Routes>
