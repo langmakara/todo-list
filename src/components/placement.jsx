@@ -1,4 +1,5 @@
 import { Box, Button, Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerOverlay, useDisclosure } from "@chakra-ui/react";
+import { motion } from "framer-motion";
 import React from "react";
 import { IoLibrary } from "react-icons/io5";
 
@@ -17,9 +18,21 @@ const Placement = () => {
         <DrawerContent>
           <DrawerHeader borderBottomWidth="1px">Basic Drawer</DrawerHeader>
           <DrawerBody>
-            <p>Some contents...</p>
-            <p>Some contents...</p>
-            <p>Some contents...</p>
+            <motion.p
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >Some contents...</motion.p>
+            <motion.p
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >Some contents...</motion.p>
+            <motion.p
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >Some contents...</motion.p>
           </DrawerBody>
         </DrawerContent>
       </Drawer>

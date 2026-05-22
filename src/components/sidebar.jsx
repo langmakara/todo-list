@@ -1,13 +1,11 @@
-import { create } from 'zustand'
-import { Box, Button, Flex, Heading, Image, Text, VStack, Divider, IconButton, Tooltip } from "@chakra-ui/react";
-import { IoGridOutline, IoListOutline, IoSettingsOutline, IoLogOutOutline, IoChevronBackOutline, IoChevronForwardOutline, IoLibrary } from "react-icons/io5";
+import { Box, Button, Flex, Heading, Image, Text, VStack, Divider, IconButton, Tooltip, Menu, MenuButton, MenuList, MenuItem } from "@chakra-ui/react";
+import { motion } from "framer-motion";
+import { IoGridOutline, IoListOutline, IoSettingsOutline, IoLogOutOutline, IoChevronBackOutline, IoChevronForwardOutline, IoMoonSharp, IoSunnySharp, IoLanguageSharp } from "react-icons/io5";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import profile from "../assets/profile.jpg";
-
-export const useSidebarStore = create((set) => ({
-  collapsed: false,
-  toggle: () => set((state) => ({ collapsed: !state.collapsed })),
-}))
+import { useThemeStore } from "../store/theme";
+import { useSidebarStore } from "../store/sidebar";
 
 const SIDEBAR_EXPANDED = 260
 const SIDEBAR_COLLAPSED = 80
@@ -22,9 +20,15 @@ const Sidebar = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { collapsed, toggle } = useSidebarStore()
+  const { darkMode, toggle: toggleDarkMode } = useThemeStore()
+  const { t, i18n } = useTranslation()
 
   const handleLogout = () => {
     navigate("/")
+  }
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng)
   }
 
   const width = collapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED
@@ -49,7 +53,7 @@ const Sidebar = () => {
         {!collapsed && (
           <Heading display="flex" alignItems="center" gap={2} fontSize="2xl" fontWeight="bold" color="white" whiteSpace="nowrap">
             <Box p={2} bg="rgba(255,255,255,0.15)" borderRadius="lg">
-              <IoLibrary size={20} color="#a78bfa" />
+              <IoSettingsOutline size={20} color="#a78bfa" />
             </Box>
             Todo List
           </Heading>
@@ -69,7 +73,7 @@ const Sidebar = () => {
             transition="all 0.3s"
             _hover={{ bg: "rgba(255,255,255,0.2)" }}
           >
-            <IoLibrary size={20} color="#a78bfa" />
+            <IoSettingsOutline size={20} color="#a78bfa" />
           </Box>
         )}
       </Flex>
@@ -87,7 +91,7 @@ const Sidebar = () => {
               Emily Johnson
             </Text>
             <Text fontSize="sm" color="gray.400">
-              Welcome back!
+              {t("label.welcome_back")}
             </Text>
           </>
         )}
@@ -132,21 +136,112 @@ const Sidebar = () => {
 
       <Divider borderColor="whiteAlpha.200" mb={4} />
 
-      <IconButton
-        aria-label="Toggle sidebar"
-        icon={collapsed ? <IoChevronForwardOutline size={18} /> : <IoChevronBackOutline size={18} />}
-        onClick={toggle}
-        variant="ghost"
-        borderRadius="lg"
-        mb={2}
-        alignSelf={collapsed ? "center" : "flex-end"}
-        color="gray.400"
-        _hover={{ bg: "rgba(255,255,255,0.1)", color: "white" }}
-        transition="all 0.2s"
-      />
+      <Flex direction={collapsed ? "column" : "row"} gap={2} mb={2}>
+        <Menu>
+          {({ isOpen }) => (
+            <>
+              <Tooltip label={t("label.language")} placement="right" hasArrow bg="gray.800">
+                <MenuButton
+                  as={IconButton}
+                  aria-label="Language"
+                  icon={<IoLanguageSharp size={18} />}
+                  variant="ghost"
+                  borderRadius="lg"
+                  color={isOpen ? "#a78bfa" : "gray.400"}
+                  _hover={{ bg: "rgba(255,255,255,0.1)", color: "white" }}
+                  transition="all 0.2s"
+                  transform={isOpen ? "scale(1.1)" : "scale(1)"}
+                />
+              </Tooltip>
+              <MenuList
+                bg="transparent"
+                border="none"
+                boxShadow="none"
+                p={0}
+                minW="120px"
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                  style={{
+                    background: "#252542",
+                    border: "1px solid rgba(255, 255, 255, 0.15)",
+                    borderRadius: "12px",
+                    padding: "6px",
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px"
+                  }}
+                >
+                  <MenuItem
+                    bg={i18n.language === "en" ? "rgba(167, 139, 250, 0.3)" : "transparent"}
+                    color="white"
+                    _hover={{ bg: "rgba(255,255,255,0.15)" }}
+                    _active={{ bg: "rgba(167, 139, 250, 0.4)" }}
+                    onClick={() => changeLanguage("en")}
+                    transition="all 0.15s"
+                    borderRadius="md"
+                    px={3}
+                    py={2}
+                  >
+                    <Text>En</Text>
+                  </MenuItem>
+                  <MenuItem
+                    bg={i18n.language === "km" ? "rgba(167, 139, 250, 0.3)" : "transparent"}
+                    color="white"
+                    _hover={{ bg: "rgba(255,255,255,0.15)" }}
+                    _active={{ bg: "rgba(167, 139, 250, 0.4)" }}
+                    onClick={() => changeLanguage("km")}
+                    transition="all 0.15s"
+                    borderRadius="md"
+                    px={3}
+                    py={2}
+                  >
+                    <Text>🇰🇭</Text>
+                  </MenuItem>
+                </motion.div>
+              </MenuList>
+            </>
+          )}
+        </Menu>
+
+        <Menu>
+          {({ isOpen: isDarkOpen }) => (
+            <>
+              <Tooltip label={darkMode ? "Light mode" : "Dark mode"} placement="right" hasArrow bg="gray.800">
+                <MenuButton
+                  as={IconButton}
+                  aria-label="Toggle dark mode"
+                  icon={darkMode ? <IoSunnySharp size={18} /> : <IoMoonSharp size={18} />}
+                  onClick={toggleDarkMode}
+                  variant="ghost"
+                  borderRadius="lg"
+                  color="gray.400"
+                  _hover={{ bg: "rgba(255,255,255,0.1)", color: "white" }}
+                  transition="all 0.2s"
+                  transform={isDarkOpen ? "scale(1.1)" : "scale(1)"}
+                />
+              </Tooltip>
+            </>
+          )}
+        </Menu>
+
+        <IconButton
+          aria-label="Toggle sidebar"
+          icon={collapsed ? <IoChevronForwardOutline size={18} /> : <IoChevronBackOutline size={18} />}
+          onClick={toggle}
+          variant="ghost"
+          borderRadius="lg"
+          color="gray.400"
+          _hover={{ bg: "rgba(255,255,255,0.1)", color: "white" }}
+          transition="all 0.2s"
+        />
+      </Flex>
 
       {collapsed ? (
-        <Tooltip label="Logout" placement="right" hasArrow bg="gray.800">
+        <Tooltip label={t("label.logout")} placement="right" hasArrow bg="gray.800">
           <Button
             variant="ghost"
             justifyContent="center"
@@ -172,7 +267,7 @@ const Sidebar = () => {
           fontSize="md"
           _hover={{ bg: "rgba(229, 62, 62, 0.3)" }}
         >
-          Logout
+          {t("label.logout")}
         </Button>
       )}
     </Box>

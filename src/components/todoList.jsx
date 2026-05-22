@@ -1,45 +1,84 @@
 import { AddIcon } from "@chakra-ui/icons";
-import { Box, Button, Card, CardBody, CardHeader, Checkbox, Flex, FormControl, FormLabel, Grid, GridItem, Heading, IconButton, Input, InputGroup, InputLeftElement, Select, SimpleGrid, Text, useToast, VStack } from "@chakra-ui/react";
+import { Box, Button, Card, CardBody, CardHeader, Checkbox, Flex, FormControl, FormLabel, Grid, GridItem, Heading, IconButton, Input, InputGroup, InputLeftElement, SimpleGrid, Text, useToast, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { IoCheckmarkDoneSharp, IoPencilSharp, IoSearchCircleOutline, IoTrashBinSharp } from "react-icons/io5";
 import { useAddTodo, useDeleteTodo, useUpdateTodo } from "../hooks/todo";
+import { useThemeStore } from "../store/theme";
+import AnimatedSelect from "./AnimatedSelect";
 
 const TodoList = (props) => {
-  const { data, isLoading, isError } = props;
+  const { t } = useTranslation();
+  const { data } = props;
+  const isLoading = data?.isLoading;
+  const isError = data?.isError;
+  const darkMode = useThemeStore((s) => s.darkMode);
+  
   const allTodo = data?.data?.todos || [];
-  const [filterTodo, setFilterTodo] = useState(allTodo);
-  const completedTodo = allTodo.filter((todo) => todo.completed);
-  const inProgressTodo = allTodo.filter((todo) => !todo.completed);
   const toast = useToast();
-  const { register, handleSubmit, reset } = useForm();
+
+  const { register, handleSubmit, reset, setValue, watch } = useForm({
+    defaultValues: {
+      todo: "",
+      category: "personal",
+      priority: "medium",
+      dueDate: new Date().toISOString().split('T')[0]
+    }
+  });
+
+  const categoryValue = watch("category");
+  const priorityValue = watch("priority");
+
   const [selectId, setSelectId] = useState(null);
   const [editId, setEditId] = useState(null);
   const [editValue, setEditValue] = useState("");
 
   const status = [
-    { label: "All", value: "all" },
-    { label: "Active", value: "active" },
-    { label: "Completed", value: "completed" },
+    { label: t("label.all"), value: "all" },
+    { label: t("label.active"), value: "active" },
+    { label: t("label.completed"), value: "completed" },
   ];
 
   const filterCategory = [
-    { label: "All", value: "all" },
-    { label: "Personal", value: "personal" },
-    { label: "Home", value: "home" },
-    { label: "Work", value: "work" },
-    { label: "Other", value: "other" },
+    { label: t("label.all"), value: "all" },
+    { label: t("label.personal"), value: "personal" },
+    { label: t("label.home"), value: "home" },
+    { label: t("label.work"), value: "work" },
+    { label: t("label.other"), value: "other" },
   ];
+
   const [selectStatus, setSelectStatus] = useState(status[0]);
   const [filterSelectedCategory, setFilterSelectedCategory] = useState(filterCategory[0]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const { mutateAsync: updateTodo, isLoading: updateTodoLoading } = useUpdateTodo({
+  // Derived filter state dynamically on render
+  const filterTodo = allTodo.filter((todo) => {
+    // 1. Search Query Filter
+    if (searchQuery && !todo.todo?.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    // 2. Status Filter
+    if (selectStatus.value === "active" && todo.completed) {
+      return false;
+    }
+    if (selectStatus.value === "completed" && !todo.completed) {
+      return false;
+    }
+    // 3. Category Filter
+    if (filterSelectedCategory.value !== "all" && todo.category !== filterSelectedCategory.value) {
+      return false;
+    }
+    return true;
+  });
+
+  const { mutateAsync: updateTodo } = useUpdateTodo({
     config: {
       onSuccess: () => {
         if (toast.isActive('update-todo')) return;
         toast({
           id: 'update-todo',
-          title: "Todo updated successfully",
+          title: t("label.todo_updated"),
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -50,7 +89,7 @@ const TodoList = (props) => {
         if (toast.isActive('update-todo-error')) return;
         toast({
           id: 'update-todo-error',
-          title: "Error updating todo",
+          title: t("label.error"),
           description: error.message,
           status: "error",
           duration: 5000,
@@ -65,17 +104,22 @@ const TodoList = (props) => {
     config: {
       onSuccess: () => {
         toast({
-          title: "Task added!",
+          title: t("label.todo_added"),
           status: "success",
           duration: 3000,
           isClosable: true,
           position: "top-right",
         });
-        reset();
+        reset({
+          todo: "",
+          category: "personal",
+          priority: "medium",
+          dueDate: new Date().toISOString().split('T')[0]
+        });
       },
       onError: (error) => {
         toast({
-          title: "Error adding todo",
+          title: t("label.error"),
           description: error.message,
           status: "error",
           duration: 5000,
@@ -90,7 +134,7 @@ const TodoList = (props) => {
     config: {
       onSuccess: () => {
         toast({
-          title: "Task deleted",
+          title: t("label.todo_deleted"),
           status: "info",
           duration: 3000,
           isClosable: true,
@@ -99,7 +143,7 @@ const TodoList = (props) => {
       },
       onError: (error) => {
         toast({
-          title: "Error deleting todo",
+          title: t("label.error"),
           description: error.message,
           status: "error",
           duration: 5000,
@@ -116,11 +160,18 @@ const TodoList = (props) => {
 
   const onSubmit = async (formData) => {
     try {
-      const json = { todo: formData.todo, completed: false, userId: 1 };
+      const json = {
+        todo: formData.todo,
+        completed: false,
+        userId: 1,
+        category: formData.category || "personal",
+        priority: formData.priority || "medium",
+        dueDate: formData.dueDate || new Date().toISOString().split('T')[0]
+      };
       await addTodo(json);
     } catch (e) {
       toast({
-        title: "Error adding todo",
+        title: t("label.error"),
         description: e.message,
         status: "error",
         duration: 5000,
@@ -133,7 +184,7 @@ const TodoList = (props) => {
   if (isLoading) {
     return (
       <Flex justify="center" align="center" py={20}>
-        <Text color="gray.500">Loading...</Text>
+        <Text color="gray.500">{t("label.loading") || "Loading..."}</Text>
       </Flex>
     );
   }
@@ -141,7 +192,7 @@ const TodoList = (props) => {
   if (isError) {
     return (
       <Flex justify="center" align="center" py={20}>
-        <Text color="red.500">Error loading tasks</Text>
+        <Text color="red.500">{t("label.error") || "An error occurred."}</Text>
       </Flex>
     );
   }
@@ -150,26 +201,33 @@ const TodoList = (props) => {
     <Box mt={6}>
       <Grid templateColumns={{ base: "1fr", lg: "300px 1fr" }} gap={6}>
         <GridItem>
-          <Card rounded={24} shadow="0 4px 20px rgba(0,0,0,0.08)" border="1px solid" borderColor="gray.100">
+          <Card
+            rounded={24}
+            shadow={darkMode ? "none" : "0 4px 20px rgba(0,0,0,0.08)"}
+            border="1px solid"
+            borderColor={darkMode ? "whiteAlpha.200" : "gray.100"}
+            bg={darkMode ? "#252542" : "white"}
+          >
             <CardHeader p={5} pb={2}>
-              <Heading fontSize="lg" fontWeight="bold" color="gray.700" display="flex" alignItems="center" gap={2}>
-                <AddIcon color="purple.500" boxSize={3} />
-                Quick Add Task
+              <Heading fontSize="lg" fontWeight="bold" color={darkMode ? "white" : "gray.700"} display="flex" alignItems="center" gap={2}>
+                <AddIcon color="purple.400" boxSize={3} />
+                {t("label.quick_add_task")}
               </Heading>
             </CardHeader>
             <CardBody p={5} pt={2}>
               <VStack spacing={4}>
                 <FormControl>
-                  <FormLabel fontSize="sm" color="gray.600">Task Description</FormLabel>
+                  <FormLabel fontSize="sm" color={darkMode ? "gray.300" : "gray.600"}>{t("label.task_description")}</FormLabel>
                   <Input
                     {...register("todo")}
                     type="text"
-                    placeholder="What needs to be done?"
+                    placeholder={t("label.enter") + " " + t("label.task_description").toLowerCase()}
                     rounded={16}
-                    bg="gray.50"
+                    bg={darkMode ? "#1a1a2e" : "gray.50"}
                     border="2px solid"
-                    borderColor="gray.100"
-                    _focus={{ borderColor: "purple.400", bg: "white" }}
+                    borderColor={darkMode ? "whiteAlpha.300" : "gray.100"}
+                    color={darkMode ? "white" : "gray.700"}
+                    _focus={{ borderColor: "purple.400", bg: darkMode ? "#252542" : "white" }}
                     _placeholder={{ color: "gray.400" }}
                   />
                 </FormControl>
@@ -177,50 +235,47 @@ const TodoList = (props) => {
                 <SimpleGrid columns={2} spacing={3} w="100%">
                   <Box>
                     <FormControl>
-                      <FormLabel fontSize="sm" color="gray.600">Category</FormLabel>
-                      <Select
-                        rounded={16}
-                        bg="gray.50"
-                        border="2px solid"
-                        borderColor="gray.100"
-                        _focus={{ borderColor: "purple.400", bg: "white" }}
-                        {...register("category")}
-                      >
-                        <option value="personal">Personal</option>
-                        <option value="home">Home</option>
-                        <option value="work">Work</option>
-                        <option value="other">Other</option>
-                      </Select>
+                      <FormLabel fontSize="sm" color={darkMode ? "gray.300" : "gray.600"}>{t("label.category")}</FormLabel>
+                      <AnimatedSelect
+                        value={categoryValue}
+                        onChange={(val) => setValue("category", val)}
+                        options={[
+                          { label: t("label.personal"), value: "personal" },
+                          { label: t("label.home"), value: "home" },
+                          { label: t("label.work"), value: "work" },
+                          { label: t("label.other"), value: "other" },
+                        ]}
+                        placeholder={t("label.category")}
+                      />
                     </FormControl>
                   </Box>
                   <Box>
                     <FormControl>
-                      <FormLabel fontSize="sm" color="gray.600">Priority</FormLabel>
-                      <Select
-                        rounded={16}
-                        bg="gray.50"
-                        border="2px solid"
-                        borderColor="gray.100"
-                        _focus={{ borderColor: "purple.400", bg: "white" }}
-                        {...register("priority")}
-                      >
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                      </Select>
+                      <FormLabel fontSize="sm" color={darkMode ? "gray.300" : "gray.600"}>{t("label.priority")}</FormLabel>
+                      <AnimatedSelect
+                        value={priorityValue}
+                        onChange={(val) => setValue("priority", val)}
+                        options={[
+                          { label: t("label.low"), value: "low" },
+                          { label: t("label.medium"), value: "medium" },
+                          { label: t("label.high"), value: "high" },
+                        ]}
+                        placeholder={t("label.priority")}
+                      />
                     </FormControl>
                   </Box>
                 </SimpleGrid>
 
                 <FormControl>
-                  <FormLabel fontSize="sm" color="gray.600">Due Date (Optional)</FormLabel>
+                  <FormLabel fontSize="sm" color={darkMode ? "gray.300" : "gray.600"}>{t("label.due_date")}</FormLabel>
                   <Input
                     type="date"
                     rounded={16}
-                    bg="gray.50"
+                    bg={darkMode ? "#1a1a2e" : "gray.50"}
                     border="2px solid"
-                    borderColor="gray.100"
-                    _focus={{ borderColor: "purple.400", bg: "white" }}
+                    borderColor={darkMode ? "whiteAlpha.300" : "gray.100"}
+                    color={darkMode ? "white" : "gray.700"}
+                    _focus={{ borderColor: "purple.400", bg: darkMode ? "#252542" : "white" }}
                     {...register("dueDate")}
                   />
                 </FormControl>
@@ -236,7 +291,7 @@ const TodoList = (props) => {
                   _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
                   transition="all 0.2s"
                 >
-                  Add Task
+                  {t("label.add_task")}
                 </Button>
               </VStack>
             </CardBody>
@@ -244,9 +299,15 @@ const TodoList = (props) => {
         </GridItem>
 
         <GridItem>
-          <Card rounded={24} shadow="0 4px 20px rgba(0,0,0,0.08)" border="1px solid" borderColor="gray.100">
+          <Card
+            rounded={24}
+            shadow={darkMode ? "none" : "0 4px 20px rgba(0,0,0,0.08)"}
+            border="1px solid"
+            borderColor={darkMode ? "whiteAlpha.200" : "gray.100"}
+            bg={darkMode ? "#252542" : "white"}
+          >
             <CardHeader p={5} pb={3}>
-              <Box p={4} bg="gray.50" rounded={20}>
+              <Box p={4} bg={darkMode ? "#1a1a2e" : "gray.50"} rounded={20}>
                 <Grid templateColumns={{ base: "1fr", md: "1fr auto" }} gap={4}>
                   <GridItem>
                     <InputGroup size="lg">
@@ -254,26 +315,21 @@ const TodoList = (props) => {
                         <IoSearchCircleOutline size="22px" color="gray.400" />
                       </InputLeftElement>
                       <Input
-                        placeholder="Search tasks..."
+                        placeholder={t("label.search_tasks")}
                         rounded={16}
-                        bg="white"
+                        bg={darkMode ? "#252542" : "white"}
                         border="2px solid"
-                        borderColor="gray.200"
+                        borderColor={darkMode ? "whiteAlpha.300" : "gray.200"}
+                        color={darkMode ? "white" : "gray.700"}
                         _focus={{ borderColor: "purple.400", boxShadow: "none" }}
                         _placeholder={{ color: "gray.400" }}
-                        onChange={(e) => {
-                          const value = e.target.value.toLowerCase();
-                          if (!value) {
-                            setFilterTodo(allTodo);
-                            return;
-                          }
-                          setFilterTodo(allTodo.filter(t => t.todo.toLowerCase().includes(value)));
-                        }}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </InputGroup>
                   </GridItem>
                   <GridItem>
-                    <Flex gap={2} bg="white" p={1} rounded={16} border="2px solid" borderColor="gray.200">
+                    <Flex gap={2} bg={darkMode ? "#252542" : "white"} p={1} rounded={16} border="2px solid" borderColor={darkMode ? "whiteAlpha.300" : "gray.200"}>
                       {status.map((item) => (
                         <Button
                           key={item.value}
@@ -284,16 +340,7 @@ const TodoList = (props) => {
                           colorScheme={item.value === selectStatus.value ? "purple" : "gray"}
                           variant={item.value === selectStatus.value ? "solid" : "ghost"}
                           borderRadius={14}
-                          onClick={() => {
-                            setSelectStatus(item);
-                            if (item.value === "all") {
-                              setFilterTodo(allTodo);
-                            } else if (item.value === "active") {
-                              setFilterTodo(inProgressTodo);
-                            } else {
-                              setFilterTodo(completedTodo);
-                            }
-                          }}
+                          onClick={() => setSelectStatus(item)}
                         >
                           {item.label}
                         </Button>
@@ -314,15 +361,8 @@ const TodoList = (props) => {
                       colorScheme={item.value === filterSelectedCategory.value ? "purple" : "gray"}
                       variant={item.value === filterSelectedCategory.value ? "solid" : "outline"}
                       borderRadius="full"
-                      borderColor="gray.300"
-                      onClick={() => {
-                        setFilterSelectedCategory(item);
-                        if (item.value === "all") {
-                          setFilterTodo(allTodo);
-                        } else if (item.value === "personal" || item.value === "home" || item.value === "work" || item.value === "other") {
-                          setFilterTodo(allTodo.filter(t => t.category === item.value));
-                        }
-                      }}
+                      borderColor={darkMode ? "gray.500" : "gray.300"}
+                      onClick={() => setFilterSelectedCategory(item)}
                     >
                       {item.label}
                     </Button>
@@ -333,14 +373,14 @@ const TodoList = (props) => {
 
             <CardBody p={5} pt={2}>
               <Box>
-                <Text fontWeight="bold" color="gray.600" mb={4} fontSize="sm">
-                  {filterTodo.length} {filterTodo.length === 1 ? "task" : "tasks"}
+                <Text fontWeight="bold" color={darkMode ? "gray.300" : "gray.600"} mb={4} fontSize="sm">
+                  {filterTodo.length} {filterTodo.length === 1 ? t("label.task") : t("label.tasks")}
                 </Text>
 
                 {filterTodo.length === 0 ? (
                   <Box textAlign="center" py={10}>
-                    <Text color="gray.400" fontSize="lg">No tasks found</Text>
-                    <Text color="gray.400" fontSize="sm">Add a new task to get started</Text>
+                    <Text color="gray.400" fontSize="lg">{t("label.no_tasks")}</Text>
+                    <Text color="gray.400" fontSize="sm">{t("label.add_new_task")}</Text>
                   </Box>
                 ) : (
                   <VStack spacing={3} align="stretch">
@@ -350,12 +390,12 @@ const TodoList = (props) => {
                         py={3}
                         px={4}
                         rounded={18}
-                        shadow="0 2px 8px rgba(0,0,0,0.06)"
+                        shadow={darkMode ? "none" : "0 2px 8px rgba(0,0,0,0.06)"}
                         border="1px solid"
-                        borderColor={todo.completed ? "green.100" : "gray.100"}
-                        bg={todo.completed ? "green.50" : "white"}
+                        borderColor={todo.completed ? (darkMode ? "green.800" : "green.100") : (darkMode ? "whiteAlpha.200" : "gray.100")}
+                        bg={todo.completed ? (darkMode ? "green.900" : "green.50") : (darkMode ? "#1a1a2e" : "white")}
                         transition="all 0.2s"
-                        _hover={{ shadow: "0 4px 12px rgba(0,0,0,0.1)", transform: "translateX(4px)" }}
+                        _hover={{ shadow: darkMode ? "0 4px 12px rgba(0,0,0,0.3)" : "0 4px 12px rgba(0,0,0,0.1)", transform: "translateX(4px)" }}
                       >
                         <Flex align="center" justify="space-between">
                           <Flex align="center" flex={1}>
@@ -373,6 +413,8 @@ const TodoList = (props) => {
                                 rounded={12}
                                 autoFocus
                                 mr={2}
+                                bg={darkMode ? "#252542" : "white"}
+                                color={darkMode ? "white" : "gray.700"}
                                 onChange={(e) => setEditValue(e.target.value)}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") {
@@ -387,7 +429,7 @@ const TodoList = (props) => {
                             ) : (
                               <Text
                                 textDecoration={todo.completed ? "line-through" : "none"}
-                                color={todo.completed ? "gray.400" : "gray.700"}
+                                color={todo.completed ? "gray.500" : (darkMode ? "white" : "gray.700")}
                                 fontWeight={todo.completed ? "normal" : "medium"}
                                 fontSize="md"
                               >
@@ -421,22 +463,22 @@ const TodoList = (props) => {
                                 }}
                                 rounded={12}
                                 color="gray.500"
-                                _hover={{ color: "purple.500", bg: "purple.50" }}
+                                _hover={{ color: "purple.400", bg: darkMode ? "purple.900" : "purple.50" }}
                               />
                             )}
                             <IconButton
-                              aria-label="Delete"
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setSelectId({ id: todo.id });
-                                deleteTodo(todo.id);
-                              }}
-                              isDisabled={todo.id === selectId?.id && deleteTodoLoading}
-                              icon={<IoTrashBinSharp />}
-                              rounded={12}
-                              color="gray.500"
-                              _hover={{ color: "red.500", bg: "red.50" }}
+                                aria-label="Delete"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectId({ id: todo.id });
+                                  deleteTodo(todo.id);
+                                }}
+                                isDisabled={todo.id === selectId?.id && deleteTodoLoading}
+                                icon={<IoTrashBinSharp />}
+                                rounded={12}
+                                color="gray.500"
+                                _hover={{ color: "red.400", bg: darkMode ? "red.900" : "red.50" }}
                             />
                           </Flex>
                         </Flex>
